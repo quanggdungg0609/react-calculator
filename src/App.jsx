@@ -8,7 +8,7 @@ import './App.css';
 export const ACTIONS={
     ADD_DIGIT:'add_digit',
     CLEAR:"clear",
-    DEL_DIGIT:'del_digit',
+    DEL_CURRENT:'del_current',
     EVALUATE:'evaluate',
     CHOOSE_OPERATION:'choose_operation',
     CHOOSE_FUNCTION:'choose_function'
@@ -74,6 +74,31 @@ function reducer(state, {type, payload}) {
                 operation:null,
                 currentOperand:evaluate(state)
             }
+        case ACTIONS.DEL_CURRENT:
+            if (state.overwrite) {
+                return {
+                    ...state,
+                    overwrite:false,
+                    currentOperand:null,
+                }
+            }
+            if (state.currentOperand==null)
+            {
+                return state;
+            }
+            if (state.currentOperand.length===1){
+                return{
+                    ...state,
+                    currentOperand:null
+                }
+            }
+            return {
+                ...state,
+                currentOperand:state.previousOperand,
+                previousOperand:null,
+                operation:null
+            }
+        
         default:
             console.log('Case invalide')
     }
@@ -104,7 +129,16 @@ function evaluate({currentOperand, previousOperand, operation}){
     }
     return computation.toString()
 }
+const INTERGER_FORMATTER=new Intl.NumberFormat('en-us',{
+    maximumFractionDigits:0,
+})
 
+function formatOperand(operand) {
+    if (operand == null) return
+    const [integer, decimal] = operand.split(".")
+    if (decimal == null) return INTERGER_FORMATTER.format(integer)
+    return `${INTERGER_FORMATTER.format(integer)}.${decimal}`
+}
 function App() {
     const [{ currentOperand, previousOperand, operation }, dispatch] = useReducer(
         reducer,
@@ -115,11 +149,14 @@ function App() {
     return (  
         <div className="calculator-grid">
             <div className="output">
-                <div className="previous-operand">{previousOperand} {operation}</div>
-                <div className="current-operand">{currentOperand}</div>
+                <div className="previous-operand">{formatOperand(previousOperand)} {operation}</div>
+                <div className="current-operand">{formatOperand(currentOperand)}</div>
             </div>
             {/* First Line */}
-            <button className='function-btn' onClick={()=>dispatch({type: ACTIONS.CLEAR})}>AC</button>
+            {currentOperand==null?
+                <button className='function-btn' onClick={()=>dispatch({type: ACTIONS.CLEAR})}>AC</button>:
+                <button className='function-btn' onClick={()=>dispatch({type: ACTIONS.DEL_CURRENT})}>C</button>
+            }
             <FunctionButton func="±" dispatch={dispatch}/>
             <FunctionButton func="%" dispatch={dispatch}/>
             <OperationButton operation={"÷"}dispatch={dispatch}/>
