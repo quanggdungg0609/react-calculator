@@ -16,7 +16,7 @@ export const ACTIONS={
 
 function reducer(state, {type, payload}) {
     switch (type){
-    
+        //Handle add digit
         case ACTIONS.ADD_DIGIT:
             if (state.overwrite){
                 return {
@@ -35,7 +35,7 @@ function reducer(state, {type, payload}) {
                 ...state,
                 currentOperand:`${state.currentOperand || ''}${payload.digit}`
             }
-
+        //Clear button
         case ACTIONS.CLEAR:
             return {};
 
@@ -63,6 +63,7 @@ function reducer(state, {type, payload}) {
                 operation:payload.operation,
                 currentOperand:null
             }
+        //handle action when click on = button
         case ACTIONS.EVALUATE:
             if (state.operation==null || state.currentOperand==null || state.previousOperand==null){
                 return state;
@@ -74,6 +75,7 @@ function reducer(state, {type, payload}) {
                 operation:null,
                 currentOperand:evaluate(state)
             }
+        //handle action when click on C button
         case ACTIONS.DEL_CURRENT:
             if (state.overwrite) {
                 return {
@@ -98,7 +100,57 @@ function reducer(state, {type, payload}) {
                 previousOperand:null,
                 operation:null
             }
-        
+
+        //handle when choose function button
+        case ACTIONS.CHOOSE_FUNCTION:
+            switch (payload.func){
+                case "%":
+                    if(state.currentOperand==null && state.previousOperand!=null){
+                        return {
+                            ...state,
+                            currentOperand:(parseFloat(state.previousOperand)/100).toString(),
+                            previousState:null,
+                            operation:null
+                        };
+                    }
+                    if (state.currentOperand==null){
+                        return state;
+                    }
+
+                    return {
+                        ...state,
+                        currentOperand:(parseFloat(state.currentOperand)/100).toString(),
+                    }
+                case "±":
+                    if(state.currentOperand==null && state.previousOperand!=null){
+                        return {
+                            ...state,
+                            currentOperand:`-${state.previousOperand}`,
+                            previousOperand:null,
+                            operation:null
+                        };
+                    }
+                    if (state.currentOperand.includes("-")){
+                        return {
+                            ...state,
+                            currentOperand:state.currentOperand.slice(1),
+                            previousOperand:null,
+                            operantion:null,
+                        }
+                    }
+                    if (state.currentOperand==null){
+                        return state
+                    }
+                    return {
+                        ...state,
+                        currentOperand:`-${state.currentOperand}`,
+                        previousOperand:null,
+                        operantion:null,
+                    }
+                default:
+                    console.log('Case invalide')
+            }
+            break
         default:
             console.log('Case invalide')
     }
@@ -129,23 +181,24 @@ function evaluate({currentOperand, previousOperand, operation}){
     }
     return computation.toString()
 }
+
+//Function format number
 const INTERGER_FORMATTER=new Intl.NumberFormat('en-us',{
     maximumFractionDigits:0,
 })
-
 function formatOperand(operand) {
     if (operand == null) return
     const [integer, decimal] = operand.split(".")
     if (decimal == null) return INTERGER_FORMATTER.format(integer)
     return `${INTERGER_FORMATTER.format(integer)}.${decimal}`
 }
+
+
 function App() {
     const [{ currentOperand, previousOperand, operation }, dispatch] = useReducer(
         reducer,
         {}
     );
-
-
     return (  
         <div className="calculator-grid">
             <div className="output">
